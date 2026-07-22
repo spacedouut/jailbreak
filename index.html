@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>your-repo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0d0d0f;
+      color: #e8e8e8;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      gap: 2rem;
+    }
+
+    .label {
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #555;
+    }
+
+    .url {
+      font-size: 0.85rem;
+      color: #888;
+      background: #1a1a1e;
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      border: 1px solid #2a2a2e;
+      word-break: break-all;
+      text-align: center;
+      max-width: 380px;
+      width: 100%;
+    }
+
+    .buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      width: 100%;
+      max-width: 280px;
+    }
+
+    a.btn {
+      display: block;
+      text-align: center;
+      text-decoration: none;
+      padding: 0.9rem 1.5rem;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      transition: opacity 0.15s;
+    }
+
+    a.btn:active { opacity: 0.7; }
+
+    .btn-sileo {
+      background: #f5a623;
+      color: #0d0d0f;
+    }
+
+    .btn-zebra {
+      background: #3d85f7;
+      color: #fff;
+    }
+
+    .copy-btn {
+      background: none;
+      border: 1px solid #333;
+      color: #666;
+      font-family: inherit;
+      font-size: 0.75rem;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+      width: 100%;
+      max-width: 280px;
+    }
+
+    .copy-btn:hover { color: #aaa; border-color: #555; }
+    .copy-btn.copied { color: #5cb85c; border-color: #5cb85c; }
+  </style>
+</head>
+<body>
+
+  <span class="label">apt repo</span>
+
+  <code class="url" id="repo-url">https://YOUR_USERNAME.github.io/YOUR_REPO/</code>
+
+  <div class="buttons">
+    <a class="btn btn-sileo" id="sileo-link" href="#">Add to Sileo</a>
+    <a class="btn btn-zebra" id="zebra-link" href="#">Add to Zebra</a>
+  </div>
+
+  <button class="copy-btn" onclick="copyUrl()">copy url</button>
+
+  <script>
+    const REPO_URL = 'https://YOUR_USERNAME.github.io/YOUR_REPO/';
+
+    document.getElementById('sileo-link').href = 'sileo://source/' + REPO_URL;
+    document.getElementById('zebra-link').href = 'zebra://source/' + REPO_URL;
+
+    function copyUrl() {
+      navigator.clipboard.writeText(REPO_URL).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        btn.textContent = 'copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'copy url';
+          btn.classList.remove('copied');
+        }, 1500);
+      });
+    }
+  </script>
+
+</body>
+</html>
