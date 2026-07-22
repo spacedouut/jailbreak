@@ -1,0 +1,21 @@
+name: Debug Runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: macos-15
+
+    steps:
+      - name: Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          audience: ${{ secrets.TS_AUDIENCE }}
+          tags: tag:ci
+
+      - name: SSH via tmate
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
