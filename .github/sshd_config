@@ -1,0 +1,24 @@
+Port 2222
+ListenAddress __TAILSCALE_IP__
+AddressFamily inet
+
+HostKey __HOST_KEY__
+PidFile __PID_FILE__
+AuthorizedKeysFile __AUTHORIZED_KEYS__
+AllowUsers __RUNNER_USER__
+
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+ChallengeResponseAuthentication no
+PubkeyAuthentication yes
+PermitRootLogin no
+PermitEmptyPasswords no
+UsePAM no
+X11Forwarding no
+AllowAgentForwarding no
+AllowTcpForwarding yes
+GatewayPorts no
+PermitTunnel no
+PrintMotd no
+StrictModes yes
+LogLevel VERBOSE

@@ -1,0 +1,108 @@
+name: macOS 15 Tailscale SSH
+
+on:
+  workflow_dispatch:
+    inputs:
+      session_minutes:
+        description: How long to keep the SSH session available
+        required: true
+        default: '60'
+        type: choice
+        options:
+          - '30'
+          - '60'
+          - '120'
+          - '240'
+          - '330'
+
+# OIDC is used to join Tailscale without storing a long-lived auth key.
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: macos-15-tailscale-ssh
+  cancel-in-progress: true
+
+jobs:
+  ssh:
+    runs-on: macos-15
+    timeout-minutes: 350
+    steps:
+      - name: Check out SSH configuration
+        uses: actions/checkout@v4
+
+      - name: Connect runner to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          audience: ${{ secrets.TS_AUDIENCE }}
+          tags: tag:github-runner
+          hostname: gh-macos15-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Configure key-only SSH
+        env:
+          SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${SSH_PUBLIC_KEY}" ]]; then
+            echo "The SSH_PUBLIC_KEY repository secret is missing or empty." >&2
+            exit 1
+          fi
+
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$SSH_PUBLIC_KEY" > "$HOME/.ssh/authorized_keys"
+          chmod 600 "$HOME/.ssh/authorized_keys"
+
+          work_dir="$RUNNER_TEMP/tailscale-ssh"
+          install -d -m 700 "$work_dir"
+          ssh-keygen -q -t ed25519 -N '' -f "$work_dir/ssh_host_ed25519_key"
+          tailscale_ip="$(tailscale ip -4 | head -n 1)"
+
+          sed \
+            -e "s|__RUNNER_USER__|$USER|g" \
+            -e "s|__TAILSCALE_IP__|$tailscale_ip|g" \
+            -e "s|__AUTHORIZED_KEYS__|$HOME/.ssh/authorized_keys|g" \
+            -e "s|__HOST_KEY__|$work_dir/ssh_host_ed25519_key|g" \
+            -e "s|__PID_FILE__|$work_dir/sshd.pid|g" \
+            "$GITHUB_WORKSPACE/.github/sshd_config" > "$work_dir/sshd_config"
+
+          sudo /usr/sbin/sshd -t -f "$work_dir/sshd_config"
+          sudo /usr/sbin/sshd -f "$work_dir/sshd_config"
+
+          tailscale_name="$(tailscale status --json | python3 -c 'import json,sys; print(json.load(sys.stdin)["Self"]["DNSName"].rstrip("."))')"
+          ssh_fingerprint="$(ssh-keygen -lf "$work_dir/ssh_host_ed25519_key.pub" | awk '{print $2}')"
+
+          {
+            echo "### macOS 15 SSH session"
+            echo
+            echo 'Connect from a device already signed in to the same tailnet:'
+            echo
+            echo '```sh'
+            echo "ssh -p 2222 $USER@$tailscale_name"
+            echo '```'
+            echo
+            echo "Fallback IP: \`$tailscale_ip\`"
+            echo "SSH user: \`$USER\`"
+            echo "Host key fingerprint: \`$ssh_fingerprint\`"
+            echo "Session duration: \`${{ inputs.session_minutes }} minutes\`"
+            echo
+            echo "Cancel this workflow run to close the session early."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "SSH is ready: ssh -p 2222 $USER@$tailscale_name"
+
+      - name: Keep runner available
+        shell: bash
+        run: |
+          set -euo pipefail
+          end=$((SECONDS + ${{ inputs.session_minutes }} * 60))
+          while (( SECONDS < end )); do
+            if ! sudo kill -0 "$(cat "$RUNNER_TEMP/tailscale-ssh/sshd.pid")" 2>/dev/null; then
+              echo "sshd stopped unexpectedly" >&2
+              exit 1
+            fi
+            sleep 30
+          done
