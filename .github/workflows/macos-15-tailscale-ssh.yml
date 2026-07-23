@@ -30,10 +30,10 @@ jobs:
     timeout-minutes: 350
     steps:
       - name: Check out SSH configuration
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Connect runner to Tailscale
-        uses: tailscale/github-action@v7
+        uses: tailscale/github-action@v4
         with:
           oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
           audience: ${{ secrets.TS_AUDIENCE }}
