@@ -1,0 +1,13 @@
+Package: nodejs
+Name: Node.js 24 with npm
+Version: 24.16.0-1
+Architecture: iphoneos-arm64
+Section: Development
+Priority: optional
+Maintainer: spacedouut
+Provides: npm
+Conflicts: npm
+Replaces: npm
+Description: Node.js 24 LTS and npm for jailbroken iOS
+ Cross-compiled for rootless Dopamine/Procursus. V8 defaults to jitless mode
+ for safe execution on A10 hardware.
